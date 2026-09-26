@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { TabId } from "./Toolbar";
+import type { TabId } from "./toolbar";
 
 const content: Record<TabId, { title: string; rows: [string, string][] }> = {
   screens: {

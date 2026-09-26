@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
-import { CenterPanel } from "@/components/church/CenterPanel";
-import { LeftPanel } from "@/components/church/LeftPanel";
-import { OutputPanel } from "@/components/church/OutputPanel";
-import { PresentOverlay } from "@/components/church/PresentOverlay";
-import { TabPanel } from "@/components/church/TabPanel";
-import { Toolbar, type TabId } from "@/components/church/Toolbar";
+import { CenterPanel } from "@/components/centerpanel";
+import { LeftPanel } from "@/components/leftpanel";
+import { OutputPanel } from "@/components/outputpanel";
+import { PresentOverlay } from "@/components/presentoverlay";
+import { TabPanel } from "@/components/Tabpanel";
+import { Toolbar, type TabId } from "@/components/toolbar";
 import { flatSlides, mediaItems, serviceItems } from "@/lib/service-data";
 
 const title = "Vespers — Church Presentation Software";
@@ -28,9 +28,11 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [activeItemId, setActiveItemId] = useState(serviceItems[1]!.id);
-  const [currentSlideId, setCurrentSlideId] = useState(serviceItems[1]!.slides[0]!.id);
-  const [activeMediaId, setActiveMediaId] = useState(mediaItems[0]!.id);
+  const [activeItemId, setActiveItemId] = useState(serviceItems[1]?.id ?? serviceItems[0]?.id ?? "");
+  const [currentSlideId, setCurrentSlideId] = useState(
+    serviceItems[1]?.slides[0]?.id ?? serviceItems[0]?.slides[0]?.id ?? "",
+  );
+  const [activeMediaId, setActiveMediaId] = useState(mediaItems[0]?.id ?? "");
   const [tab, setTab] = useState<TabId | null>(null);
   const [live, setLive] = useState(true);
   const [presenting, setPresenting] = useState(false);
@@ -43,6 +45,7 @@ function Index() {
   const next = flatSlides[index + 1];
 
   const goTo = useCallback((i: number) => {
+    if (flatSlides.length === 0) return;
     const clamped = Math.min(Math.max(i, 0), flatSlides.length - 1);
     const slide = flatSlides[clamped]!;
     setCurrentSlideId(slide.id);

@@ -1,6 +1,6 @@
 import { Clock, Film, Plus } from "lucide-react";
 import { mediaItems, serviceItems, type FlatSlide } from "@/lib/service-data";
-import { SlideView } from "./SlideView";
+import { SlideView } from "./slideview";
 
 type Props = {
   activeItemId: string;
