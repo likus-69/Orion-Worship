@@ -1,11 +1,13 @@
 // Service data for Orion-Worship.
 //
 // This module is the source of truth for the static service plan shown in the
-// workspace, plus the small "song bank" list surfaced in the left panel. The
-// richer, lyrics-backed Song Library lives in `./song-library` and feeds the
-// Song Library dialog; `songBank` below is a lightweight derived view of it.
+// workspace. The richer, lyrics-backed Song Library (seed + user-created
+// songs) lives in `./song-library` and is surfaced through the
+// `useSongLibrary()` hook so the left panel and Song Library dialog both
+// reflect user-created songs at runtime.
 
-import { songLibrary } from "./song-library";
+// Re-export Song so callers can import it via the service-data barrel.
+export type { Song } from "./song-library";
 
 export type SlideKind = "title" | "lyrics" | "scripture" | "sermon" | "blank";
 
@@ -31,13 +33,6 @@ export type Playlist = {
   id: string;
   name: string;
   count: number;
-};
-
-export type LibrarySong = {
-  id: string;
-  title: string;
-  author: string;
-  key: string;
 };
 
 export const serviceItems: ServiceItem[] = [
@@ -183,15 +178,6 @@ export const playlists: Playlist[] = [
   { id: "pl-3", name: "Communion Set", count: 4 },
   { id: "pl-4", name: "Christmas Eve", count: 11 },
 ];
-
-// Derive the compact song-bank view used by the left panel from the richer
-// Song Library so there is a single source of truth for song metadata.
-export const songBank: LibrarySong[] = songLibrary.map((song) => ({
-  id: song.id,
-  title: song.title,
-  author: song.author,
-  key: song.key,
-}));
 
 export const mediaItems = [
   { id: "md-1", name: "Stage Wash", type: "Motion", tone: "from-[#2b3f6b] to-[#0f1422]" },

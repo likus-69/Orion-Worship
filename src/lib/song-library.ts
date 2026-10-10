@@ -697,6 +697,13 @@ export const songCategories: readonly { value: SongCategory; label: string }[] =
 
 export const songKeys: readonly string[] = [...new Set(songLibrary.map((song) => song.key))].sort();
 
+/** Compute the union of musical keys across any set of song lists (seed + user). */
+export function collectSongKeys(...lists: Song[][]): string[] {
+  const set = new Set<string>();
+  for (const list of lists) for (const song of list) set.add(song.key);
+  return [...set].sort();
+}
+
 /**
  * Convert a song into a flat list of presentation slides, one per section.
  * Each slide inherits the song's author as its attribution so the operator
@@ -735,13 +742,15 @@ export type SongSearchOptions = {
 
 /**
  * Fuzzy search across title, author, lyrics, and tags. Empty query returns
- * the full library (optionally filtered by key/category).
+ * the full library (optionally filtered by key/category). Pass a `songs`
+ * argument to search a merged list (e.g. seed + user songs from the hook);
+ * otherwise it searches the static seed catalogue.
  */
-export function searchSongs(options: SongSearchOptions = {}): Song[] {
+export function searchSongs(options: SongSearchOptions = {}, songs: Song[] = songLibrary): Song[] {
   const { query, category, songKey } = options;
   const normalized = (query ?? "").trim().toLowerCase();
 
-  return songLibrary.filter((song) => {
+  return songs.filter((song) => {
     if (category && song.category !== category) return false;
     if (songKey && song.key !== songKey) return false;
     if (!normalized) return true;
@@ -765,4 +774,281 @@ export function searchSongs(options: SongSearchOptions = {}): Song[] {
  */
 export function songSlideCount(song: Song): number {
   return song.sections.length;
+}
+
+// ---------------------------------------------------------------------------
+// User song storage (localStorage)
+// ---------------------------------------------------------------------------
+//
+// Songs created in the editor are persisted to localStorage so they survive
+// page refreshes and stay separate from the read-only seed catalogue. User
+// songs have ids prefixed with `user-` so they can be distinguished from
+// seed songs (which cannot be edited or deleted through the UI).
+
+export const USER_SONG_ID_PREFIX = "user-";
+const USER_SONGS_STORAGE_KEY = "orion-worship:user-songs:v1";
+
+/** True for songs the operator created in the editor (vs. read-only seed songs). */
+export function isUserSong(song: Song): boolean {
+  return song.id.startsWith(USER_SONG_ID_PREFIX);
+}
+
+/**
+ * Load user-created songs from localStorage. Returns an empty array on any
+ * parse failure or when running in an environment without `localStorage`
+ * (SSR, sandboxed iframes).
+ */
+export function loadUserSongs(): Song[] {
+  if (typeof window === "undefined" || !window.localStorage) return [];
+  try {
+    const raw = window.localStorage.getItem(USER_SONGS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isStoredSong).map(normalizeStoredSong);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Persist the user song array. Silently no-ops in environments without
+ * `localStorage` to keep the editor usable during SSR / tests.
+ */
+export function saveUserSongs(songs: Song[]): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(USER_SONGS_STORAGE_KEY, JSON.stringify(songs));
+  } catch {
+    // Quota exceeded or serialization error — swallow so the editor keeps working.
+  }
+}
+
+/** Subscribe to user-song changes from other tabs/windows. Returns an unsubscribe. */
+export function subscribeToUserSongs(handler: () => void): () => void {
+  if (typeof window === "undefined" || !window.addEventListener) return () => {};
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === USER_SONGS_STORAGE_KEY) handler();
+  };
+  window.addEventListener("storage", onStorage);
+  return () => window.removeEventListener("storage", onStorage);
+}
+
+function isStoredSong(value: unknown): value is Song {
+  if (!value || typeof value !== "object") return false;
+  const song = value as Record<string, unknown>;
+  return (
+    typeof song["id"] === "string" &&
+    typeof song["title"] === "string" &&
+    typeof song["author"] === "string" &&
+    typeof song["key"] === "string" &&
+    typeof song["category"] === "string" &&
+    Array.isArray(song["sections"]) &&
+    Array.isArray(song["tags"])
+  );
+}
+
+/** Coerce a parsed song back into a clean Song shape (defensive against bad JSON). */
+function normalizeStoredSong(raw: Song): Song {
+  const song: Song = {
+    id: raw.id,
+    title: raw.title,
+    author: raw.author,
+    key: raw.key,
+    category: raw.category,
+    sections: raw.sections
+      .filter((section) => section && typeof section.label === "string")
+      .map((section) => ({
+        id: String(section.id),
+        kind: section.kind,
+        label: section.label,
+        lines: Array.isArray(section.lines) ? section.lines.map(String) : [],
+      })),
+    tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
+  };
+  // Conditionally restore optional fields (absent in older saved data).
+  if (typeof raw.bpm === "number") song.bpm = raw.bpm;
+  if (typeof raw.ccli === "string") song.ccli = raw.ccli;
+  if (typeof raw.copyright === "string") song.copyright = raw.copyright;
+  return song;
+}
+
+// ---------------------------------------------------------------------------
+// Lyrics <-> plain text parser
+// ---------------------------------------------------------------------------
+//
+// The editor accepts plain-text lyrics with a small, predictable syntax:
+//
+//   Verse 1:
+//   Amazing grace, how sweet the sound,
+//   That saved a wretch like me.
+//
+//   Chorus:
+//   My chains are gone,
+//   I've been set free.
+//
+// Rules:
+//   - A line whose trimmed form ends with `:` and is otherwise a short label
+//     (letters, digits, spaces, hyphens, apostrophes, parens) starts a new
+//     section. The text before the colon becomes the section label.
+//   - Lines starting with `//` or `#` are comments and skipped.
+//   - Blank lines are ignored (they don't break sections).
+//   - Lyric lines appearing before the first header are collected under an
+//     implicit "Verse 1" section so users can paste bare lyrics.
+//   - Section `kind` is derived from the label prefix (Verse -> "verse",
+//     Chorus -> "chorus", etc.).
+
+/** Plain-text input for the song editor. */
+export type SongEditorInput = {
+  title: string;
+  author: string;
+  key: string;
+  category: SongCategory;
+  // Optional fields accept explicit `undefined` so the editor can represent
+  // "cleared" inputs without violating `exactOptionalPropertyTypes`.
+  bpm?: number | undefined;
+  copyright?: string | undefined;
+  ccli?: string | undefined;
+  tags: string[];
+  /** Plain-text lyrics following the format documented above. */
+  lyrics: string;
+};
+
+/**
+ * Parse plain-text lyrics into structured sections. Section ids are derived
+ * from the kind + an incrementing per-kind counter so they stay stable
+ * across edits when the structure doesn't change.
+ */
+export function parseSongLyrics(text: string): SongSection[] {
+  const lines = text.split(/\r?\n/);
+  const sections: SongSection[] = [];
+  let label: string | null = null;
+  let kind: SongSectionKind = "verse";
+  let buffer: string[] = [];
+  const counters: Record<string, number> = {};
+
+  const flush = () => {
+    if (label === null) return;
+    if (buffer.length === 0) return;
+    const prefix = SECTION_ID_PREFIX[kind] ?? "s";
+    counters[prefix] = (counters[prefix] ?? 0) + 1;
+    sections.push({
+      id: `${prefix}${counters[prefix]}`,
+      kind,
+      label,
+      lines: buffer,
+    });
+    label = null;
+    buffer = [];
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (line === "") continue;
+    if (line.startsWith("//") || line.startsWith("#")) continue;
+
+    if (isSectionHeader(line)) {
+      flush();
+      label = line.slice(0, -1).trim();
+      kind = detectSectionKind(label);
+      continue;
+    }
+
+    if (label === null) {
+      // Implicit first section when the user pastes bare lyrics.
+      label = "Verse 1";
+      kind = "verse";
+    }
+    buffer.push(line);
+  }
+  flush();
+
+  return sections;
+}
+
+/** True if a line looks like a section header (e.g. "Verse 1:", "Chorus:"). */
+function isSectionHeader(line: string): boolean {
+  if (!line.endsWith(":")) return false;
+  const label = line.slice(0, -1).trim();
+  if (!label) return false;
+  return /^[A-Za-z][A-Za-z0-9\s\-()'']{0,40}$/.test(label);
+}
+
+function detectSectionKind(label: string): SongSectionKind {
+  const lower = label.toLowerCase();
+  if (lower.startsWith("pre")) return "pre-chorus";
+  if (lower.startsWith("verse")) return "verse";
+  if (lower.startsWith("chorus")) return "chorus";
+  if (lower.startsWith("bridge")) return "bridge";
+  if (lower.startsWith("tag")) return "tag";
+  if (lower.startsWith("intro")) return "intro";
+  if (lower.startsWith("instrumental")) return "instrumental";
+  if (lower.startsWith("outro")) return "outro";
+  if (lower.startsWith("ending")) return "ending";
+  return "verse";
+}
+
+const SECTION_ID_PREFIX: Record<SongSectionKind, string> = {
+  verse: "v",
+  chorus: "c",
+  "pre-chorus": "p",
+  bridge: "b",
+  tag: "t",
+  intro: "i",
+  instrumental: "inst",
+  outro: "o",
+  ending: "e",
+};
+
+/** Render a song's sections back into the plain-text lyrics format. */
+export function serializeSongLyrics(song: Pick<Song, "sections">): string {
+  return song.sections
+    .map((section) => `${section.label}:\n${section.lines.join("\n")}`)
+    .join("\n\n");
+}
+
+/**
+ * Build a Song from editor input. Generates a fresh user-namespaced id when
+ * creating, or preserves the existing id when editing.
+ */
+export function buildSongFromInput(input: SongEditorInput, existingId?: string): Song {
+  const id =
+    existingId ?? `${USER_SONG_ID_PREFIX}${slugify(input.title)}-${Date.now().toString(36)}`;
+  const song: Song = {
+    id,
+    title: input.title.trim(),
+    author: input.author.trim(),
+    key: input.key.trim() || "—",
+    category: input.category,
+    tags: input.tags,
+    sections: parseSongLyrics(input.lyrics),
+  };
+  // Conditionally assign optional fields so we don't violate
+  // `exactOptionalPropertyTypes` (which forbids explicit `undefined`).
+  if (input.bpm !== undefined) song.bpm = input.bpm;
+  if (input.copyright) song.copyright = input.copyright.trim();
+  if (input.ccli) song.ccli = input.ccli.trim();
+  return song;
+}
+
+function slugify(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "song"
+  );
+}
+
+/** Validate editor input. Returns the first error message, or null if valid. */
+export function validateSongInput(input: SongEditorInput): string | null {
+  if (!input.title.trim()) return "Title is required.";
+  if (!input.author.trim()) return "Author is required.";
+  const sections = parseSongLyrics(input.lyrics);
+  if (sections.length === 0) {
+    return "Lyrics must contain at least one section. Start a section with a header line like 'Verse 1:'.";
+  }
+  return null;
 }

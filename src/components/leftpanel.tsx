@@ -3,9 +3,9 @@ import { Search, ListMusic, Library, ChevronRight, BookOpen } from "lucide-react
 import {
   playlists,
   serviceItems as defaultServiceItems,
-  songBank,
   type ServiceItem,
 } from "@/lib/service-data";
+import { useSongLibrary } from "@/hooks/use-song-library";
 import { SongLibraryDialog } from "./SongLibraryDialog";
 import type { Song } from "@/lib/song-library";
 
@@ -27,13 +27,17 @@ export function LeftPanel({ activeItemId, onSelectItem, serviceItems, onAddSong 
   // the panel still renders in isolation (e.g. tests, storybook).
   const visibleItems = serviceItems ?? defaultServiceItems;
 
-  const results = useMemo(() => {
-    if (!normalizedQuery) return songBank;
+  // Pull the merged seed + user song list from the library hook so user-created
+  // songs show up in the song bank quick-pick as well as in the dialog.
+  const { songs } = useSongLibrary();
 
-    return songBank.filter((song) =>
+  const results = useMemo(() => {
+    if (!normalizedQuery) return songs;
+
+    return songs.filter((song) =>
       `${song.title} ${song.author}`.toLowerCase().includes(normalizedQuery),
     );
-  }, [normalizedQuery]);
+  }, [normalizedQuery, songs]);
 
   return (
     <aside className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r border-hairline panel-surface p-3 scroll-slim">
