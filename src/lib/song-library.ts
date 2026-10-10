@@ -1052,3 +1052,115 @@ export function validateSongInput(input: SongEditorInput): string | null {
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Export / Import (JSON)
+// ---------------------------------------------------------------------------
+//
+// User songs can be exported to a JSON file for backup or sharing, and
+// imported back into any browser. The format is versioned so future schema
+// changes can be migrated.
+
+export const SONG_EXPORT_FORMAT = "orion-worship:songs:v1" as const;
+
+export type SongExportFile = {
+  format: typeof SONG_EXPORT_FORMAT;
+  exportedAt: string;
+  count: number;
+  songs: Song[];
+};
+
+/** Build a JSON-exportable bundle from a list of songs (typically user songs). */
+export function buildSongExport(songs: Song[]): SongExportFile {
+  return {
+    format: SONG_EXPORT_FORMAT,
+    exportedAt: new Date().toISOString(),
+    count: songs.length,
+    songs,
+  };
+}
+
+/**
+ * Parse an import file. Returns either the valid songs or an error message.
+ * Songs that fail validation are skipped (not fatal) so a partially-corrupt
+ * file still imports the good entries.
+ */
+export function parseSongExport(raw: string): { songs: Song[]; error: string | null } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return { songs: [], error: "File is not valid JSON." };
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    return { songs: [], error: "Expected a JSON object." };
+  }
+
+  const root = parsed as Record<string, unknown>;
+  // Accept either the wrapped export format or a bare array of songs.
+  const candidates: unknown[] = Array.isArray(root["songs"])
+    ? (root["songs"] as unknown[])
+    : Array.isArray(parsed)
+      ? (parsed as unknown[])
+      : [];
+
+  if (candidates.length === 0) {
+    return { songs: [], error: "No songs found in the file." };
+  }
+
+  const songs: Song[] = [];
+  let skipped = 0;
+  for (const candidate of candidates) {
+    const normalized = normalizeStoredSongIfValid(candidate);
+    if (normalized) {
+      songs.push(normalized);
+    } else {
+      skipped++;
+    }
+  }
+
+  if (songs.length === 0) {
+    return { songs: [], error: "None of the entries in the file are valid songs." };
+  }
+
+  return {
+    songs,
+    error: skipped > 0 ? `${skipped} invalid entr${skipped === 1 ? "y" : "ies"} skipped.` : null,
+  };
+}
+
+/** Validate + normalize a single candidate song from an imported file. */
+function normalizeStoredSongIfValid(value: unknown): Song | null {
+  if (!isStoredSong(value)) return null;
+  return normalizeStoredSong(value);
+}
+
+/**
+ * Merge imported songs into an existing user-song list. Songs with the same id
+ * are overwritten; songs with new ids are appended. Returns the merged list
+ * and a summary of what changed.
+ */
+export function mergeImportedSongs(
+  existing: Song[],
+  imported: Song[],
+): { merged: Song[]; added: number; overwritten: number } {
+  const byId = new Map<string, Song>(existing.map((song) => [song.id, song]));
+  let added = 0;
+  let overwritten = 0;
+  for (const song of imported) {
+    if (byId.has(song.id)) {
+      overwritten++;
+    } else {
+      added++;
+    }
+    byId.set(song.id, song);
+  }
+  // Preserve existing order, then append new songs at the end.
+  const existingIds = new Set(existing.map((song) => song.id));
+  const merged = [
+    ...existing.map((song) => byId.get(song.id) ?? song),
+    ...imported.filter((song) => !existingIds.has(song.id)),
+  ];
+  return { merged, added, overwritten };
+}

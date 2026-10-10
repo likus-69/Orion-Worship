@@ -7,8 +7,9 @@ import { LeftPanel } from "@/components/leftpanel";
 import { OutputPanel } from "@/components/outputpanel";
 import { PresentOverlay } from "@/components/presentoverlay";
 import { Toolbar, type TabId } from "@/components/toolbar";
-import { mediaItems, serviceItems, type ServiceItem } from "@/lib/service-data";
+import { mediaItems, serviceItems } from "@/lib/service-data";
 import { songToServiceItem, type Song } from "@/lib/song-library";
+import { useServicePlan } from "@/hooks/use-service-plan";
 
 const title = "Vespers — Church Presentation Software";
 const description =
@@ -29,9 +30,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  // Lift the service plan into state so songs added from the Song Library can
-  // be appended at runtime without mutating the static module export.
-  const [items, setItems] = useState<ServiceItem[]>(() => serviceItems);
+  // Persist the service plan to localStorage so songs added during a service
+  // survive a page refresh. See hooks/use-service-plan.ts for details.
+  const { items, setItems, resetPlan } = useServicePlan();
   const [activeItemId, setActiveItemId] = useState(serviceItems[1]!.id);
   const [currentSlideId, setCurrentSlideId] = useState(serviceItems[1]!.slides[0]!.id);
   const [activeMediaId, setActiveMediaId] = useState(mediaItems[0]!.id);
@@ -87,16 +88,33 @@ function Index() {
     [serviceItemById],
   );
 
-  const handleAddSong = useCallback((song: Song) => {
-    const item = songToServiceItem(song);
-    setItems((prev) => (prev.some((existing) => existing.id === item.id) ? prev : [...prev, item]));
-    // Jump straight to the newly added song so the operator sees it land.
-    setActiveItemId(item.id);
-    if (item.slides[0]) setCurrentSlideId(item.slides[0].id);
-    toast.success(`Added "${song.title}" to the service plan`, {
-      description: `${item.slides.length} slides inserted · ${song.author} · Key of ${song.key}`,
-    });
-  }, []);
+  const handleAddSong = useCallback(
+    (song: Song) => {
+      const item = songToServiceItem(song);
+      setItems((prev) =>
+        prev.some((existing) => existing.id === item.id) ? prev : [...prev, item],
+      );
+      // Jump straight to the newly added song so the operator sees it land.
+      setActiveItemId(item.id);
+      if (item.slides[0]) setCurrentSlideId(item.slides[0].id);
+      toast.success(`Added "${song.title}" to the service plan`, {
+        description: `${item.slides.length} slides inserted · ${song.author} · Key of ${song.key}`,
+      });
+    },
+    [setItems],
+  );
+
+  const handleResetPlan = useCallback(() => {
+    const ok = window.confirm(
+      "Reset the service plan to the default? Songs you've added will be removed from the plan (but stay in your library).",
+    );
+    if (!ok) return;
+    resetPlan();
+    const first = serviceItems[1]!;
+    setActiveItemId(first.id);
+    setCurrentSlideId(first.slides[0]!.id);
+    toast.success("Service plan reset to default");
+  }, [resetPlan]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background stage-wash">
@@ -104,6 +122,7 @@ function Index() {
         active={tab}
         onSelect={(t) => setTab((prev) => (prev === t ? null : t))}
         onPresent={() => setPresenting(true)}
+        onResetPlan={handleResetPlan}
         live={live}
       />
       {tab && <div>tab content</div>}

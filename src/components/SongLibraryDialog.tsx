@@ -1,13 +1,17 @@
-import { useDeferredValue, useMemo, useState } from "react";
-import { Music2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import * as React from "react";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { Download, Music2, Pencil, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/ui/dialog";
 import { Button } from "@/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  buildSongExport,
   collectSongKeys,
   isUserSong,
+  mergeImportedSongs,
+  parseSongExport,
   searchSongs,
   songCategories,
   songSlideCount,
@@ -25,7 +29,8 @@ type Props = {
 };
 
 export function SongLibraryDialog({ open, onOpenChange, onAddSong }: Props) {
-  const { songs, addUserSong, updateUserSong, deleteUserSong } = useSongLibrary();
+  const { songs, userSongs, addUserSong, updateUserSong, deleteUserSong, replaceUserSongs } =
+    useSongLibrary();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<SongCategory | null>(null);
@@ -36,6 +41,9 @@ export function SongLibraryDialog({ open, onOpenChange, onAddSong }: Props) {
   const [editor, setEditor] = useState<{ mode: "create" } | { mode: "edit"; song: Song } | null>(
     null,
   );
+
+  // Hidden file input used to trigger the import dialog.
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const deferredQuery = useDeferredValue(query);
 
@@ -89,6 +97,60 @@ export function SongLibraryDialog({ open, onOpenChange, onAddSong }: Props) {
     toast.success(`Deleted "${song.title}"`);
   };
 
+  const handleExport = () => {
+    if (userSongs.length === 0) {
+      toast.error("No user songs to export. Create a song first.");
+      return;
+    }
+    const bundle = buildSongExport(userSongs);
+    const json = JSON.stringify(bundle, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const date = new Date().toISOString().slice(0, 10);
+    a.download = `orion-worship-songs-${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${userSongs.length} song${userSongs.length === 1 ? "" : "s"}`, {
+      description: "Saved to your downloads folder.",
+    });
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // Reset the input so the same file can be re-imported.
+    event.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const { songs: imported, error } = parseSongExport(text);
+      if (imported.length === 0) {
+        toast.error("Import failed", { description: error ?? "No valid songs found." });
+        return;
+      }
+      const { merged, added, overwritten } = mergeImportedSongs(userSongs, imported);
+      replaceUserSongs(merged);
+      toast.success(`Imported ${imported.length} song${imported.length === 1 ? "" : "s"}`, {
+        description: [
+          `${added} new`,
+          overwritten > 0 ? ` · ${overwritten} overwritten` : "",
+          error ? ` · ${error}` : "",
+        ].join(""),
+      });
+    };
+    reader.onerror = () => toast.error("Could not read the file.");
+    reader.readAsText(file);
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,20 +159,49 @@ export function SongLibraryDialog({ open, onOpenChange, onAddSong }: Props) {
             <div className="flex items-center gap-2">
               <Music2 className="size-4 text-beam" />
               <DialogTitle className="text-base font-medium">Song Library</DialogTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                className="ml-auto h-7 gap-1.5 px-2.5 text-[12px]"
-                onClick={() => setEditor({ mode: "create" })}
-              >
-                <Plus className="size-3.5" />
-                New song
-              </Button>
+              <div className="ml-auto flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 gap-1.5 px-2.5 text-[12px] text-muted-foreground"
+                  onClick={handleImportClick}
+                  title="Import songs from a JSON file"
+                >
+                  <Upload className="size-3.5" />
+                  <span className="hidden lg:inline">Import</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 gap-1.5 px-2.5 text-[12px] text-muted-foreground"
+                  onClick={handleExport}
+                  title="Export your songs to a JSON file"
+                >
+                  <Download className="size-3.5" />
+                  <span className="hidden lg:inline">Export</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1.5 px-2.5 text-[12px]"
+                  onClick={() => setEditor({ mode: "create" })}
+                >
+                  <Plus className="size-3.5" />
+                  New song
+                </Button>
+              </div>
             </div>
             <DialogDescription className="text-[12px]">
               Search the catalogue, preview the lyrics, and add a song to the service plan. Songs
               you create are saved to your browser and persist across sessions.
             </DialogDescription>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={handleImportFile}
+            />
           </DialogHeader>
 
           <div className="flex min-h-0 h-[60vh]">

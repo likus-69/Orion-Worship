@@ -1,4 +1,11 @@
-import { MonitorSpeaker, LayoutTemplate, CircleHelp, UserRound, Play } from "lucide-react";
+import {
+  MonitorSpeaker,
+  LayoutTemplate,
+  CircleHelp,
+  UserRound,
+  Play,
+  RotateCcw,
+} from "lucide-react";
 
 export type TabId = "screens" | "layout" | "help" | "account";
 
@@ -13,10 +20,12 @@ type Props = {
   active: TabId | null;
   onSelect: (tab: TabId) => void;
   onPresent: () => void;
+  /** Reset the service plan to the default seed plan. */
+  onResetPlan?: () => void;
   live: boolean;
 };
 
-export function Toolbar({ active, onSelect, onPresent, live }: Props) {
+export function Toolbar({ active, onSelect, onPresent, onResetPlan, live }: Props) {
   return (
     <header className="flex shrink-0 items-center gap-4 border-b border-hairline panel-surface px-4 py-2.5">
       <div className="flex items-center gap-2.5">
@@ -63,6 +72,16 @@ export function Toolbar({ active, onSelect, onPresent, live }: Props) {
           />
           {live ? "On air" : "Standby"}
         </span>
+        {onResetPlan && (
+          <button
+            onClick={onResetPlan}
+            className="inline-flex items-center gap-1.5 rounded-md bg-panel-raised px-3 py-2 text-[12.5px] text-muted-foreground ring-1 ring-hairline transition-colors hover:bg-accent hover:text-foreground"
+            title="Reset service plan to default"
+          >
+            <RotateCcw className="size-3.5" />
+            <span className="hidden lg:inline">Reset plan</span>
+          </button>
+        )}
         <button
           onClick={onPresent}
           className="inline-flex items-center gap-2 rounded-md bg-beam px-4 py-2 text-sm font-semibold text-beam-foreground transition-opacity hover:opacity-90"

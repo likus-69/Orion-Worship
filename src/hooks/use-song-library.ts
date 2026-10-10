@@ -40,11 +40,6 @@ export function useSongLibrary() {
     return [...songLibrary, ...userSongs];
   }, [userSongs]);
 
-  const persist = React.useCallback((next: Song[]) => {
-    saveUserSongs(next);
-    setUserSongs(next);
-  }, []);
-
   const addUserSong = React.useCallback((input: SongEditorInput): Song => {
     const song = buildSongFromInput(input);
     setUserSongs((prev) => {
@@ -71,6 +66,12 @@ export function useSongLibrary() {
     });
   }, []);
 
+  /** Replace the entire user-song list (used by import). */
+  const replaceUserSongs = React.useCallback((next: Song[]) => {
+    saveUserSongs(next);
+    setUserSongs(next);
+  }, []);
+
   return {
     songs,
     userSongs,
@@ -78,5 +79,6 @@ export function useSongLibrary() {
     addUserSong,
     updateUserSong,
     deleteUserSong,
+    replaceUserSongs,
   };
 }
