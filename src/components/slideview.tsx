@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import type { FlatSlide } from "@/lib/service-data";
 
 type Props = {
@@ -40,6 +42,17 @@ const sizes = {
 
 export function SlideView({ slide, scale = "canvas", background }: Props) {
   const s = sizes[scale];
+  const lineMarkup = useMemo(
+    () =>
+      slide && slide.kind !== "blank"
+        ? slide.lines.map((line, index) => ({
+            key: `${slide.id}-${index}`,
+            line,
+            index,
+          }))
+        : [],
+    [slide],
+  );
 
   if (!slide || slide.kind === "blank") {
     return <div className="h-full w-full bg-[#06080d]" />;
@@ -65,9 +78,9 @@ export function SlideView({ slide, scale = "canvas", background }: Props) {
           {slide.itemTitle} · {slide.label}
         </p>
         <div className={s.gap}>
-          {slide.lines.map((line, i) => (
+          {lineMarkup.map(({ key, line }) => (
             <p
-              key={i}
+              key={key}
               className={`font-serif font-medium text-balance ${s.body} ${
                 slide.kind === "sermon" ? "tracking-tight" : ""
               }`}
