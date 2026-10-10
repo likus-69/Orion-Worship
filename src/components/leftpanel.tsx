@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { Search, ListMusic, Library, ChevronRight } from "lucide-react";
 import { playlists, serviceItems, songBank } from "@/lib/service-data";
 
@@ -9,9 +9,16 @@ type Props = {
 
 export function LeftPanel({ activeItemId, onSelectItem }: Props) {
   const [query, setQuery] = useState("");
-  const results = songBank.filter((s) =>
-    (s.title + s.author).toLowerCase().includes(query.toLowerCase()),
-  );
+  const deferredQuery = useDeferredValue(query);
+  const normalizedQuery = deferredQuery.trim().toLowerCase();
+
+  const results = useMemo(() => {
+    if (!normalizedQuery) return songBank;
+
+    return songBank.filter((song) =>
+      `${song.title} ${song.author}`.toLowerCase().includes(normalizedQuery),
+    );
+  }, [normalizedQuery]);
 
   return (
     <aside className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r border-hairline panel-surface p-3 scroll-slim">

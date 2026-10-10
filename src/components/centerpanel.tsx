@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Clock, Film, Plus } from "lucide-react";
 import { mediaItems, serviceItems, type FlatSlide } from "@/lib/service-data";
 import { SlideView } from "./SlideView";
@@ -19,7 +20,15 @@ export function CenterPanel({
   activeMediaId,
   onSelectMedia,
 }: Props) {
-  const item = serviceItems.find((s) => s.id === activeItemId) ?? serviceItems[0]!;
+  const item = useMemo(
+    () => serviceItems.find((s) => s.id === activeItemId) ?? serviceItems[0]!,
+    [activeItemId],
+  );
+
+  const thumbnailSlides = useMemo(
+    () => item.slides.map((slide) => ({ ...slide, itemId: item.id, itemTitle: item.title })),
+    [item],
+  );
 
   return (
     <main className="flex min-w-0 flex-1 flex-col">
@@ -41,7 +50,7 @@ export function CenterPanel({
         <div>
           <p className="eyebrow mb-2">Slides in this item</p>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5">
-            {item.slides.map((slide, i) => {
+            {thumbnailSlides.map((slide, i) => {
               const isActive = slide.id === currentSlideId;
               return (
                 <button
@@ -54,10 +63,7 @@ export function CenterPanel({
                   }`}
                 >
                   <div className="aspect-video w-full">
-                    <SlideView
-                      slide={{ ...slide, itemId: item.id, itemTitle: item.title }}
-                      scale="thumb"
-                    />
+                    <SlideView slide={slide} scale="thumb" />
                   </div>
                   <div className="flex items-center justify-between bg-panel-raised/70 px-2 py-1">
                     <span className="truncate text-[11px]">{slide.label}</span>

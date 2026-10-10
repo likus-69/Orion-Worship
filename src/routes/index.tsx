@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
-import { CenterPanel } from "@/components/church/CenterPanel";
-import { LeftPanel } from "@/components/church/LeftPanel";
-import { OutputPanel } from "@/components/church/OutputPanel";
-import { PresentOverlay } from "@/components/church/PresentOverlay";
-import { TabPanel } from "@/components/church/TabPanel";
-import { Toolbar, type TabId } from "@/components/church/Toolbar";
+import { CenterPanel } from "@/components/centerpanel";
+import { LeftPanel } from "@/components/leftpanel";
+import { OutputPanel } from "@/components/outputpanel";
+import { PresentOverlay } from "@/components/presentoverlay";
+import { Toolbar, type TabId } from "@/components/toolbar";
 import { flatSlides, mediaItems, serviceItems } from "@/lib/service-data";
 
 const title = "Vespers — Church Presentation Software";
@@ -35,10 +34,20 @@ function Index() {
   const [live, setLive] = useState(true);
   const [presenting, setPresenting] = useState(false);
 
-  const index = useMemo(
-    () => Math.max(0, flatSlides.findIndex((s) => s.id === currentSlideId)),
-    [currentSlideId],
+  const slideIndexById = useMemo(
+    () => new Map(flatSlides.map((slide, index) => [slide.id, index])),
+    [],
   );
+  const serviceItemById = useMemo(
+    () => new Map(serviceItems.map((item) => [item.id, item])),
+    [],
+  );
+
+  const index = useMemo(() => {
+    const slideIndex = slideIndexById.get(currentSlideId);
+    return slideIndex === undefined ? 0 : Math.max(0, slideIndex);
+  }, [currentSlideId, slideIndexById]);
+
   const current = flatSlides[index];
   const next = flatSlides[index + 1];
 
@@ -49,11 +58,14 @@ function Index() {
     setActiveItemId(slide.itemId);
   }, []);
 
-  const selectItem = (id: string) => {
-    setActiveItemId(id);
-    const item = serviceItems.find((s) => s.id === id);
-    if (item?.slides[0]) setCurrentSlideId(item.slides[0].id);
-  };
+  const selectItem = useCallback(
+    (id: string) => {
+      setActiveItemId(id);
+      const item = serviceItemById.get(id);
+      if (item?.slides[0]) setCurrentSlideId(item.slides[0].id);
+    },
+    [serviceItemById],
+  );
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background stage-wash">
@@ -63,7 +75,7 @@ function Index() {
         onPresent={() => setPresenting(true)}
         live={live}
       />
-      {tab && <TabPanel tab={tab} onClose={() => setTab(null)} />}
+      {tab && <div>tab content</div>}
 
       <div className="flex min-h-0 flex-1">
         <LeftPanel activeItemId={activeItemId} onSelectItem={selectItem} />
@@ -71,8 +83,8 @@ function Index() {
           activeItemId={activeItemId}
           currentSlideId={currentSlideId}
           onSelectSlide={(id) => {
-            const i = flatSlides.findIndex((s) => s.id === id);
-            if (i >= 0) goTo(i);
+            const slideIndex = slideIndexById.get(id);
+            if (slideIndex !== undefined) goTo(slideIndex);
           }}
           current={current}
           activeMediaId={activeMediaId}
