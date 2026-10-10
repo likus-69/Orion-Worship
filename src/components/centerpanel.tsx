@@ -6,7 +6,7 @@ import {
   type FlatSlide,
   type ServiceItem,
 } from "@/lib/service-data";
-import { SlideView } from "./SlideView";
+import { SlideView } from "./slideview";
 
 type Props = {
   activeItemId: string;

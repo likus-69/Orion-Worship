@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { FlatSlide } from "@/lib/service-data";
-import { SlideView } from "./SlideView";
+import { SlideView } from "./slideview";
 
 type Props = {
   slide: FlatSlide | undefined;

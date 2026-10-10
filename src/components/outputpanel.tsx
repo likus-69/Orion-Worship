@@ -1,6 +1,6 @@
 import { Monitor, Eye, EyeOff, SkipForward } from "lucide-react";
 import type { FlatSlide } from "@/lib/service-data";
-import { SlideView } from "./SlideView";
+import { SlideView } from "./slideview";
 
 type Props = {
   current: FlatSlide | undefined;

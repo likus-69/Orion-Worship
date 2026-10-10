@@ -5,7 +5,7 @@ import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import { toggleVariants } from "@/components/ui/toggle";
+import { toggleVariants } from "@/ui/toggle";
 
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
   size: "default",
@@ -34,14 +34,16 @@ const ToggleGroupItem = React.forwardRef<
     VariantProps<typeof toggleVariants>
 >(({ className, children, variant, size, ...props }, ref) => {
   const context = React.useContext(ToggleGroupContext);
+  const variantValue = context["variant"] ?? variant;
+  const sizeValue = context["size"] ?? size;
 
   return (
     <ToggleGroupPrimitive.Item
       ref={ref}
       className={cn(
         toggleVariants({
-          variant: context.variant || variant,
-          size: context.size || size,
+          variant: variantValue,
+          size: sizeValue,
         }),
         className,
       )}
