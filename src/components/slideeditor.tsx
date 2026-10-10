@@ -34,18 +34,13 @@ export function SlideEditor({ slide, onUpdate }: Props) {
           value={slide.attribution ?? ""}
           disabled={isBlank}
           placeholder="e.g. Psalm 23:1–2"
-          onChange={(e) =>
-            onUpdate(slide.id, { attribution: e.target.value || undefined })
-          }
+          onChange={(e) => onUpdate(slide.id, { attribution: e.target.value || undefined })}
           className="h-8 bg-panel-raised/60 text-xs ring-hairline"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label
-          className="eyebrow flex items-center gap-1.5"
-          htmlFor="slide-lines"
-        >
+        <label className="eyebrow flex items-center gap-1.5" htmlFor="slide-lines">
           <AlignLeft className="size-3" /> Text — one line per row
         </label>
         <Textarea
@@ -74,7 +69,10 @@ export function SlideEditor({ slide, onUpdate }: Props) {
               { id: "paper", name: "Linen paper", cls: "from-[#efe7d7] to-[#cfc3ab]" },
             ] as const
           ).map((t) => {
-            const active = (slide.theme ?? (slide.kind === "lyrics" || slide.kind === "scripture" ? "paper" : "stage")) === t.id;
+            const active =
+              (slide.theme ??
+                (slide.kind === "lyrics" || slide.kind === "scripture" ? "paper" : "stage")) ===
+              t.id;
             return (
               <button
                 key={t.id}
@@ -82,9 +80,7 @@ export function SlideEditor({ slide, onUpdate }: Props) {
                 disabled={isBlank}
                 onClick={() => onUpdate(slide.id, { theme: t.id })}
                 className={`overflow-hidden rounded-lg text-left ring-1 transition-all disabled:opacity-40 ${
-                  active
-                    ? "ring-2 ring-beam"
-                    : "ring-hairline hover:ring-muted-foreground/60"
+                  active ? "ring-2 ring-beam" : "ring-hairline hover:ring-muted-foreground/60"
                 }`}
               >
                 <div className={`aspect-[2/1] w-full bg-gradient-to-br ${t.cls}`} />

@@ -78,7 +78,8 @@
   --paper-ink: oklch(0.24 0.03 265);
   --live: oklch(0.7 0.19 25);
 
-  --gradient-stage: radial-gradient(
+  --gradient-stage:
+    radial-gradient(
       1200px 600px at 12% -10%,
       color-mix(in oklab, var(--glow) 28%, transparent),
       transparent 60%

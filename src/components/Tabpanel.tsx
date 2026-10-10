@@ -56,7 +56,10 @@ export function TabPanel({ tab, onClose }: { tab: TabId; onClose: () => void }) 
       </div>
       <dl className="grid gap-x-8 gap-y-1.5 text-[12.5px] sm:grid-cols-2 lg:grid-cols-4">
         {data.rows.map(([k, v]) => (
-          <div key={k} className="flex items-baseline justify-between gap-3 border-b border-hairline/60 pb-1.5">
+          <div
+            key={k}
+            className="flex items-baseline justify-between gap-3 border-b border-hairline/60 pb-1.5"
+          >
             <dt className="text-muted-foreground">{k}</dt>
             <dd className="truncate text-right">{v}</dd>
           </div>

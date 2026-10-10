@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 import { Clock, Film, Plus } from "lucide-react";
-import { mediaItems, serviceItems, type FlatSlide } from "@/lib/service-data";
+import {
+  mediaItems,
+  serviceItems as defaultServiceItems,
+  type FlatSlide,
+  type ServiceItem,
+} from "@/lib/service-data";
 import { SlideView } from "./SlideView";
 
 type Props = {
@@ -10,6 +15,8 @@ type Props = {
   current: FlatSlide | undefined;
   activeMediaId: string;
   onSelectMedia: (id: string) => void;
+  /** Overrides the static service plan when the operator adds songs at runtime. */
+  serviceItems?: ServiceItem[];
 };
 
 export function CenterPanel({
@@ -19,10 +26,12 @@ export function CenterPanel({
   current,
   activeMediaId,
   onSelectMedia,
+  serviceItems,
 }: Props) {
+  const items = serviceItems ?? defaultServiceItems;
   const item = useMemo(
-    () => serviceItems.find((s) => s.id === activeItemId) ?? serviceItems[0]!,
-    [activeItemId],
+    () => items.find((s) => s.id === activeItemId) ?? items[0]!,
+    [items, activeItemId],
   );
 
   const thumbnailSlides = useMemo(
@@ -38,7 +47,7 @@ export function CenterPanel({
           <p className="truncate text-[11px] text-muted-foreground">{item.subtitle}</p>
         </div>
         <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-panel-raised px-3 py-1 text-[11px] text-muted-foreground ring-1 ring-hairline">
-          <Clock className="size-3" /> Schedule · {serviceItems.length} items
+          <Clock className="size-3" /> Schedule · {items.length} items
         </span>
       </div>
 
@@ -57,9 +66,7 @@ export function CenterPanel({
                   key={slide.id}
                   onClick={() => onSelectSlide(slide.id)}
                   className={`group overflow-hidden rounded-lg text-left ring-1 transition-all ${
-                    isActive
-                      ? "ring-2 ring-beam"
-                      : "ring-hairline hover:ring-muted-foreground/60"
+                    isActive ? "ring-2 ring-beam" : "ring-hairline hover:ring-muted-foreground/60"
                   }`}
                 >
                   <div className="aspect-video w-full">

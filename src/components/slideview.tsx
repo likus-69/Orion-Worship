@@ -66,15 +66,9 @@ export function SlideView({ slide, scale = "canvas", background }: Props) {
         onPaper ? "bg-paper text-paper-ink" : "bg-[#0a0e18] text-foreground"
       } ${background ?? ""}`}
     >
-      {!onPaper && (
-        <div className="stage-wash pointer-events-none absolute inset-0 opacity-70" />
-      )}
+      {!onPaper && <div className="stage-wash pointer-events-none absolute inset-0 opacity-70" />}
       <div className="relative">
-        <p
-          className={`eyebrow ${s.label} ${
-            onPaper ? "text-paper-ink/45" : "text-beam/80"
-          }`}
-        >
+        <p className={`eyebrow ${s.label} ${onPaper ? "text-paper-ink/45" : "text-beam/80"}`}>
           {slide.itemTitle} · {slide.label}
         </p>
         <div className={s.gap}>

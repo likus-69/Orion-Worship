@@ -21,15 +21,23 @@ export function OutputPanel({ current, next, live, onToggleLive, onNext, positio
           </p>
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] ring-1 ${
-              live ? "bg-live/15 text-live ring-live/40" : "bg-panel-raised text-muted-foreground ring-hairline"
+              live
+                ? "bg-live/15 text-live ring-live/40"
+                : "bg-panel-raised text-muted-foreground ring-hairline"
             }`}
           >
-            <span className={`size-1.5 rounded-full ${live ? "bg-live animate-pulse" : "bg-muted-foreground"}`} />
+            <span
+              className={`size-1.5 rounded-full ${live ? "bg-live animate-pulse" : "bg-muted-foreground"}`}
+            />
             {live ? "LIVE" : "OFF"}
           </span>
         </div>
         <div className="aspect-video w-full overflow-hidden rounded-lg ring-1 ring-hairline">
-          {live ? <SlideView slide={current} scale="preview" /> : <div className="h-full w-full bg-[#06080d]" />}
+          {live ? (
+            <SlideView slide={current} scale="preview" />
+          ) : (
+            <div className="h-full w-full bg-[#06080d]" />
+          )}
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
           Main screen · 1920×1080 · {position}
@@ -63,8 +71,7 @@ export function OutputPanel({ current, next, live, onToggleLive, onNext, positio
       <div className="rounded-lg bg-panel-raised/50 p-3 ring-1 ring-hairline">
         <p className="eyebrow mb-2">Stage notes</p>
         <p className="text-[12.5px] leading-relaxed text-muted-foreground">
-          Hold on the final chorus until the band resolves. Lower lyrics opacity during
-          the prayer.
+          Hold on the final chorus until the band resolves. Lower lyrics opacity during the prayer.
         </p>
       </div>
 
