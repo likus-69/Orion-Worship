@@ -38,13 +38,12 @@ export function LeftPanel({
   onLibraryOpenChange,
 }: Props) {
   const [query, setQuery] = useState("");
-  const [internalLibraryOpen, setInternalLibraryOpen] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 
-  // Use controlled open state when provided, otherwise fall back to internal.
-  const isLibraryOpen = onLibraryOpenChange ? libraryOpen : internalLibraryOpen;
-  const setLibraryOpen = onLibraryOpenChange ?? setInternalLibraryOpen;
+  // Library dialog open state is controlled by the parent (index.tsx) so the
+  // Toolbar's "Library" button and this panel's "Browse" button stay in sync.
+  const setLibraryOpen = onLibraryOpenChange ?? (() => {});
 
   const visibleItems = serviceItems ?? defaultServiceItems;
   const { songs } = useSongLibrary();
@@ -140,7 +139,12 @@ export function LeftPanel({
         <ul className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2 scroll-slim">
           {results.map((song) => (
             <li key={song.id}>
-              <button className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-[11px] hover:bg-panel-raised/70">
+              <button
+                onClick={() => onAddSong?.(song)}
+                disabled={!onAddSong}
+                title={onAddSong ? `Add "${song.title}" to the service plan` : undefined}
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-[11px] hover:bg-panel-raised/70 disabled:cursor-default disabled:opacity-60"
+              >
                 <Music2 className="size-3 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 flex-1 truncate">{song.title}</span>
                 <span className="shrink-0 rounded bg-background/60 px-1 py-0.5 text-[9px] tabular-nums text-muted-foreground">
@@ -183,11 +187,7 @@ export function LeftPanel({
       </div>
 
       {onAddSong && (
-        <SongLibraryDialog
-          open={isLibraryOpen}
-          onOpenChange={setLibraryOpen}
-          onAddSong={onAddSong}
-        />
+        <SongLibraryDialog open={libraryOpen} onOpenChange={setLibraryOpen} onAddSong={onAddSong} />
       )}
     </aside>
   );

@@ -23,8 +23,6 @@ type Props = {
   position: string;
 };
 
-type InspectorTab = "text" | "align" | "color" | "transform";
-
 export function OutputPanel({
   current,
   next,

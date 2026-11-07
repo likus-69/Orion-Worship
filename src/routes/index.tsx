@@ -127,7 +127,6 @@ function Index() {
         onOpenLibrary={() => setLibraryOpen(true)}
         live={live}
       />
-      {tab && <div>tab content</div>}
 
       <div className="flex min-h-0 flex-1">
         <LeftPanel
@@ -145,7 +144,6 @@ function Index() {
             const slideIndex = slideIndexById.get(id);
             if (slideIndex !== undefined) goTo(slideIndex);
           }}
-          current={current}
           activeMediaId={activeMediaId}
           onSelectMedia={setActiveMediaId}
           serviceItems={items}

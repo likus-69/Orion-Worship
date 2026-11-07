@@ -3,7 +3,6 @@ import { Grid2x2, List, ZoomIn, ZoomOut } from "lucide-react";
 import {
   mediaItems,
   serviceItems as defaultServiceItems,
-  type FlatSlide,
   type ServiceItem,
   type SlideKind,
 } from "@/lib/service-data";
@@ -13,7 +12,6 @@ type Props = {
   activeItemId: string;
   currentSlideId: string;
   onSelectSlide: (id: string) => void;
-  current: FlatSlide | undefined;
   activeMediaId: string;
   onSelectMedia: (id: string) => void;
   /** Overrides the static service plan when the operator adds songs at runtime. */
@@ -62,7 +60,6 @@ export function CenterPanel({
   activeItemId,
   currentSlideId,
   onSelectSlide,
-  current,
   activeMediaId,
   onSelectMedia,
   serviceItems,

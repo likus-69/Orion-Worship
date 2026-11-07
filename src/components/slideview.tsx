@@ -5,8 +5,7 @@ import type { FlatSlide } from "@/lib/service-data";
 type Props = {
   slide: FlatSlide | undefined;
   /** 1 = full presentation size, smaller for thumbnails/previews */
-  scale?: "thumb" | "preview" | "canvas" | "full";
-  background?: string;
+  scale?: "thumb" | "preview" | "full";
 };
 
 const sizes = {
@@ -24,13 +23,6 @@ const sizes = {
     pad: "px-4",
     gap: "mt-2",
   },
-  canvas: {
-    body: "text-2xl sm:text-3xl lg:text-[2.6rem] leading-[1.18]",
-    label: "text-[11px] tracking-[0.28em]",
-    attr: "text-xs",
-    pad: "px-10",
-    gap: "mt-5",
-  },
   full: {
     body: "text-4xl sm:text-6xl lg:text-7xl leading-[1.14]",
     label: "text-sm tracking-[0.3em]",
@@ -40,7 +32,7 @@ const sizes = {
   },
 } as const;
 
-export function SlideView({ slide, scale = "canvas", background }: Props) {
+export function SlideView({ slide, scale = "preview" }: Props) {
   const s = sizes[scale];
   const lineMarkup = useMemo(
     () =>
@@ -64,7 +56,7 @@ export function SlideView({ slide, scale = "canvas", background }: Props) {
     <div
       className={`relative flex h-full w-full flex-col items-center justify-center text-center ${s.pad} ${
         onPaper ? "bg-paper text-paper-ink" : "bg-[#0a0e18] text-foreground"
-      } ${background ?? ""}`}
+      }`}
     >
       {!onPaper && <div className="stage-wash pointer-events-none absolute inset-0 opacity-70" />}
       <div className="relative">
