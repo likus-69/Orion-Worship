@@ -32,7 +32,10 @@ export type ServiceItem = {
 export type Playlist = {
   id: string;
   name: string;
-  count: number;
+  /** Song IDs from the Song Library that belong to this playlist. */
+  songIds: string[];
+  /** Optional description shown when the playlist is expanded. */
+  description?: string;
 };
 
 export const serviceItems: ServiceItem[] = [
@@ -173,13 +176,47 @@ export const serviceItems: ServiceItem[] = [
 ];
 
 export const playlists: Playlist[] = [
-  { id: "pl-1", name: "Sunday 10 AM", count: 5 },
-  { id: "pl-2", name: "Youth Night", count: 8 },
-  { id: "pl-3", name: "Communion Set", count: 4 },
-  { id: "pl-4", name: "Christmas Eve", count: 11 },
+  {
+    id: "pl-1",
+    name: "Sunday 10 AM",
+    description: "Regular Sunday morning set",
+    songIds: [
+      "amazing-grace",
+      "great-is-thy-faithfulness",
+      "how-great-thou-art",
+      "10-000-reasons",
+      "cornerstone",
+    ],
+  },
+  {
+    id: "pl-2",
+    name: "Youth Night",
+    description: "Contemporary worship for youth",
+    songIds: ["10-000-reasons", "what-a-beautiful-name", "good-good-father", "cornerstone"],
+  },
+  {
+    id: "pl-3",
+    name: "Communion Set",
+    description: "Songs for communion Sunday",
+    songIds: ["amazing-grace", "blessed-assurance", "it-is-well", "be-thou-my-vision"],
+  },
+  {
+    id: "pl-4",
+    name: "Christmas Eve",
+    description: "Carols and seasonal songs",
+    songIds: ["silent-night", "holy-holy-holy", "amazing-grace"],
+  },
 ];
 
-export const mediaItems = [
+export type MediaItem = {
+  id: string;
+  name: string;
+  type: string;
+  /** Tailwind gradient classes, e.g. "from-[#2b3f6b] to-[#0f1422]". */
+  tone: string;
+};
+
+export const mediaItems: MediaItem[] = [
   { id: "md-1", name: "Stage Wash", type: "Motion", tone: "from-[#2b3f6b] to-[#0f1422]" },
   { id: "md-2", name: "Linen Paper", type: "Still", tone: "from-[#efe7d7] to-[#cfc3ab]" },
   { id: "md-3", name: "Golden Hour", type: "Motion", tone: "from-[#c78b3a] to-[#3a2a16]" },

@@ -1,13 +1,15 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ListMusic,
   Library,
   ChevronRight,
+  ChevronDown,
   BookOpen,
   Hash,
   Music2,
   Clock,
   Search,
+  Plus,
 } from "lucide-react";
 import {
   playlists,
@@ -38,8 +40,18 @@ export function LeftPanel({
   onLibraryOpenChange,
 }: Props) {
   const [query, setQuery] = useState("");
+  const [expandedPlaylistId, setExpandedPlaylistId] = useState<string | null>(null);
+  const [now, setNow] = useState<Date | null>(null);
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
+
+  // Live clock — updates every 30 seconds. `now` starts null so SSR and first
+  // paint match (no hydration mismatch), then ticks on the client.
+  useEffect(() => {
+    setNow(new Date());
+    const interval = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Library dialog open state is controlled by the parent (index.tsx) so the
   // Toolbar's "Library" button and this panel's "Browse" button stay in sync.
@@ -47,6 +59,9 @@ export function LeftPanel({
 
   const visibleItems = serviceItems ?? defaultServiceItems;
   const { songs } = useSongLibrary();
+
+  // Build a song lookup by ID so playlist expansion can resolve song titles.
+  const songById = useMemo(() => new Map(songs.map((s) => [s.id, s])), [songs]);
 
   const results = useMemo(() => {
     if (!normalizedQuery) return songs;
@@ -168,22 +183,74 @@ export function LeftPanel({
           <Hash className="size-3" /> Playlists
         </p>
         <ul className="space-y-0.5">
-          {playlists.map((pl) => (
-            <li key={pl.id}>
-              <button className="flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-[11px] text-muted-foreground hover:bg-panel-raised/60 hover:text-foreground">
-                <ChevronRight className="size-2.5 shrink-0" />
-                <span className="flex-1 truncate">{pl.name}</span>
-                <span className="text-[10px] tabular-nums">{pl.count}</span>
-              </button>
-            </li>
-          ))}
+          {playlists.map((pl) => {
+            const isExpanded = expandedPlaylistId === pl.id;
+            const playlistSongs = pl.songIds
+              .map((id) => songById.get(id))
+              .filter((s): s is Song => s !== undefined);
+            return (
+              <li key={pl.id}>
+                <button
+                  onClick={() => setExpandedPlaylistId(isExpanded ? null : pl.id)}
+                  className="flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:bg-panel-raised/60 hover:text-foreground"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="size-2.5 shrink-0" />
+                  ) : (
+                    <ChevronRight className="size-2.5 shrink-0" />
+                  )}
+                  <span className="flex-1 truncate">{pl.name}</span>
+                  <span className="text-[10px] tabular-nums">{pl.songIds.length}</span>
+                </button>
+                {isExpanded && (
+                  <div className="ml-3 mt-0.5 border-l border-hairline pl-2">
+                    {pl.description && (
+                      <p className="px-1.5 py-0.5 text-[9.5px] italic text-muted-foreground/70">
+                        {pl.description}
+                      </p>
+                    )}
+                    {playlistSongs.length > 0 ? (
+                      <ul className="space-y-0.5 py-0.5">
+                        {playlistSongs.map((song) => (
+                          <li key={song.id}>
+                            <button
+                              onClick={() => onAddSong?.(song)}
+                              disabled={!onAddSong}
+                              title={
+                                onAddSong ? `Add "${song.title}" to the service plan` : undefined
+                              }
+                              className="flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-[10.5px] text-muted-foreground transition-colors hover:bg-panel-raised/60 hover:text-foreground disabled:cursor-default disabled:opacity-50"
+                            >
+                              <Plus className="size-2.5 shrink-0 text-beam/70" />
+                              <span className="min-w-0 flex-1 truncate">{song.title}</span>
+                              <span className="shrink-0 text-[9px] tabular-nums">{song.key}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="px-1.5 py-1 text-[9.5px] text-muted-foreground/60">
+                        No songs from this playlist are in the library.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
 
-      {/* Status bar */}
+      {/* Status bar — live clock */}
       <div className="flex shrink-0 items-center gap-1.5 border-t border-hairline bg-background/40 px-3 py-1 text-[10px] text-muted-foreground">
         <Clock className="size-2.5" />
-        <span>Sunday · 10:00 AM</span>
+        <span>
+          {now
+            ? now.toLocaleDateString(undefined, { weekday: "long" }) +
+              " · " +
+              now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+            : "Loading…"}
+        </span>
       </div>
 
       {onAddSong && (

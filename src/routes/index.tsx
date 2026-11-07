@@ -156,6 +156,8 @@ function Index() {
           onNext={() => goTo(index + 1)}
           onPrev={() => goTo(index - 1)}
           position={`Slide ${index + 1} of ${flatSlides.length}`}
+          activeMediaId={activeMediaId}
+          onSelectMedia={setActiveMediaId}
         />
       </div>
 
