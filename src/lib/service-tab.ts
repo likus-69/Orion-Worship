@@ -212,17 +212,55 @@ export type MediaItem = {
   id: string;
   name: string;
   type: string;
-  /** Tailwind gradient classes, e.g. "from-[#2b3f6b] to-[#0f1422]". */
+  /** Tailwind gradient classes for the thumbnail swatch. */
   tone: string;
+  /** Optional SVG background image path (bundled in public/backgrounds/). */
+  image?: string;
 };
 
 export const mediaItems: MediaItem[] = [
-  { id: "md-1", name: "Stage Wash", type: "Motion", tone: "from-[#2b3f6b] to-[#0f1422]" },
-  { id: "md-2", name: "Linen Paper", type: "Still", tone: "from-[#efe7d7] to-[#cfc3ab]" },
-  { id: "md-3", name: "Golden Hour", type: "Motion", tone: "from-[#c78b3a] to-[#3a2a16]" },
-  { id: "md-4", name: "Deep Indigo", type: "Still", tone: "from-[#1b2340] to-[#080b14]" },
-  { id: "md-5", name: "Sanctuary", type: "Photo", tone: "from-[#5d5442] to-[#1a1712]" },
-  { id: "md-6", name: "Slow Particles", type: "Motion", tone: "from-[#2f5b57] to-[#0c1614]" },
+  {
+    id: "md-1",
+    name: "Stage Wash",
+    type: "Motion",
+    tone: "from-[#2b3f6b] to-[#0f1422]",
+    image: "/backgrounds/stage-wash.svg",
+  },
+  {
+    id: "md-2",
+    name: "Linen Paper",
+    type: "Still",
+    tone: "from-[#efe7d7] to-[#cfc3ab]",
+    image: "/backgrounds/linen-paper.svg",
+  },
+  {
+    id: "md-3",
+    name: "Golden Hour",
+    type: "Motion",
+    tone: "from-[#c78b3a] to-[#3a2a16]",
+    image: "/backgrounds/golden-hour.svg",
+  },
+  {
+    id: "md-4",
+    name: "Deep Indigo",
+    type: "Still",
+    tone: "from-[#1b2340] to-[#080b14]",
+    image: "/backgrounds/deep-indigo.svg",
+  },
+  {
+    id: "md-5",
+    name: "Sanctuary",
+    type: "Photo",
+    tone: "from-[#5d5442] to-[#1a1712]",
+    image: "/backgrounds/sanctuary.svg",
+  },
+  {
+    id: "md-6",
+    name: "Slow Particles",
+    type: "Motion",
+    tone: "from-[#2f5b57] to-[#0c1614]",
+    image: "/backgrounds/slow-particles.svg",
+  },
   { id: "md-7", name: "Blank / Black", type: "Still", tone: "from-[#0a0d14] to-[#0a0d14]" },
 ];
 

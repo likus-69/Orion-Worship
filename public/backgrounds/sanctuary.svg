@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="san" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1712"/>
+      <stop offset="50%" stop-color="#3d3424"/>
+      <stop offset="100%" stop-color="#5d5442"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#san)"/>
+  <!-- Subtle light rays -->
+  <polygon points="960,0 700,1080 1220,1080" fill="#8b7a52" opacity="0.08"/>
+</svg>
