@@ -43,54 +43,59 @@
   --color-paper: var(--paper);
   --color-paper-ink: var(--paper-ink);
   --color-live: var(--live);
+
+  /* Section-bar colors used on slide cards in the grid. */
+  --color-section-title: var(--section-title);
+  --color-section-lyrics: var(--section-lyrics);
+  --color-section-scripture: var(--section-scripture);
+  --color-section-sermon: var(--section-sermon);
+  --color-section-blank: var(--section-blank);
+  --color-section-bridge: var(--section-bridge);
+  --color-section-chorus: var(--section-chorus);
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.375rem;
 
-  --background: oklch(0.17 0.025 265);
-  --foreground: oklch(0.89 0.015 265);
-  --card: oklch(0.22 0.028 265);
-  --card-foreground: oklch(0.92 0.012 265);
-  --popover: oklch(0.22 0.028 265);
-  --popover-foreground: oklch(0.92 0.012 265);
-  --primary: oklch(0.82 0.11 75);
-  --primary-foreground: oklch(0.19 0.03 265);
-  --secondary: oklch(0.27 0.03 265);
-  --secondary-foreground: oklch(0.9 0.012 265);
-  --muted: oklch(0.26 0.028 265);
-  --muted-foreground: oklch(0.66 0.025 265);
-  --accent: oklch(0.3 0.035 265);
-  --accent-foreground: oklch(0.93 0.012 265);
-  --destructive: oklch(0.62 0.2 25);
+  /* Dark charcoal palette matching pro production software. */
+  --background: oklch(0.22 0.005 265);
+  --foreground: oklch(0.9 0.005 265);
+  --card: oklch(0.26 0.006 265);
+  --card-foreground: oklch(0.92 0.005 265);
+  --popover: oklch(0.26 0.006 265);
+  --popover-foreground: oklch(0.92 0.005 265);
+  --primary: oklch(0.72 0.15 230);
+  --primary-foreground: oklch(0.15 0.02 265);
+  --secondary: oklch(0.3 0.006 265);
+  --secondary-foreground: oklch(0.92 0.005 265);
+  --muted: oklch(0.28 0.006 265);
+  --muted-foreground: oklch(0.62 0.01 265);
+  --accent: oklch(0.34 0.008 265);
+  --accent-foreground: oklch(0.93 0.005 265);
+  --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(0.97 0.01 265);
-  --border: oklch(0.32 0.03 265);
-  --input: oklch(0.3 0.03 265);
-  --ring: oklch(0.82 0.11 75);
+  --border: oklch(0.3 0.006 265);
+  --input: oklch(0.28 0.006 265);
+  --ring: oklch(0.72 0.15 230);
 
-  --panel: oklch(0.21 0.027 265);
-  --panel-raised: oklch(0.25 0.03 265);
-  --hairline: oklch(0.31 0.03 265);
-  --beam: oklch(0.82 0.11 75);
-  --beam-foreground: oklch(0.19 0.03 265);
-  --glow: oklch(0.68 0.14 262);
-  --paper: oklch(0.97 0.012 85);
-  --paper-ink: oklch(0.24 0.03 265);
-  --live: oklch(0.7 0.19 25);
+  --panel: oklch(0.24 0.005 265);
+  --panel-raised: oklch(0.29 0.007 265);
+  --hairline: oklch(0.3 0.006 265);
+  --beam: oklch(0.72 0.15 230);
+  --beam-foreground: oklch(0.15 0.02 265);
+  --glow: oklch(0.55 0.16 240);
+  --paper: oklch(0.96 0.008 85);
+  --paper-ink: oklch(0.22 0.01 265);
+  --live: oklch(0.62 0.2 25);
 
-  --gradient-stage:
-    radial-gradient(
-      1200px 600px at 12% -10%,
-      color-mix(in oklab, var(--glow) 28%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at 105% 110%,
-      color-mix(in oklab, var(--beam) 22%, transparent),
-      transparent 60%
-    );
-  --shadow-stage: 0 30px 80px -30px color-mix(in oklab, var(--glow) 55%, transparent);
-  --shadow-panel: 0 10px 30px -18px oklch(0 0 0 / 0.8);
+  /* Section bar colors (vibrant, distinguishable). */
+  --section-title: oklch(0.62 0.19 250);
+  --section-lyrics: oklch(0.68 0.14 195);
+  --section-scripture: oklch(0.55 0.2 300);
+  --section-sermon: oklch(0.7 0.17 65);
+  --section-blank: oklch(0.5 0.01 265);
+  --section-bridge: oklch(0.58 0.2 330);
+  --section-chorus: oklch(0.65 0.22 15);
 }
 
 @layer base {
@@ -106,19 +111,27 @@
 }
 
 @utility stage-wash {
-  background-image: var(--gradient-stage);
+  background-image:
+    radial-gradient(
+      1200px 600px at 12% -10%,
+      color-mix(in oklab, var(--glow) 20%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at 105% 110%,
+      color-mix(in oklab, var(--beam) 15%, transparent),
+      transparent 60%
+    );
 }
 
 @utility panel-surface {
-  background-color: color-mix(in oklab, var(--panel) 80%, transparent);
-  backdrop-filter: blur(18px);
-  box-shadow: var(--shadow-panel);
+  background-color: var(--color-panel);
 }
 
 @utility eyebrow {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -126,4 +139,19 @@
 @utility scroll-slim {
   scrollbar-width: thin;
   scrollbar-color: var(--hairline) transparent;
+}
+
+/* Checkerboard pattern for slide card thumbnails (transparency indicator). */
+@utility checker-bg {
+  background-image:
+    linear-gradient(45deg, oklch(0.2 0.005 265) 25%, transparent 25%),
+    linear-gradient(-45deg, oklch(0.2 0.005 265) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, oklch(0.2 0.005 265) 75%),
+    linear-gradient(-45deg, transparent 75%, oklch(0.2 0.005 265) 75%);
+  background-size: 12px 12px;
+  background-position:
+    0 0,
+    0 6px,
+    6px -6px,
+    -6px 0px;
 }

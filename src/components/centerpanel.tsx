@@ -1,10 +1,11 @@
 import { useMemo } from "react";
-import { Clock, Film, Plus } from "lucide-react";
+import { Grid2x2, List, ZoomIn, ZoomOut } from "lucide-react";
 import {
   mediaItems,
   serviceItems as defaultServiceItems,
   type FlatSlide,
   type ServiceItem,
+  type SlideKind,
 } from "@/lib/service-data";
 import { SlideView } from "./slideview";
 
@@ -18,6 +19,44 @@ type Props = {
   /** Overrides the static service plan when the operator adds songs at runtime. */
   serviceItems?: ServiceItem[];
 };
+
+/**
+ * Maps a slide's kind to a tailwind class for the colored section bar at the
+ * bottom of each grid card. The colors come from CSS variables defined in
+ * styles.css and match the vibrant palette seen in pro production software.
+ */
+function sectionBarClass(kind: SlideKind): string {
+  switch (kind) {
+    case "title":
+      return "bg-section-title";
+    case "lyrics":
+      return "bg-section-lyrics";
+    case "scripture":
+      return "bg-section-scripture";
+    case "sermon":
+      return "bg-section-sermon";
+    case "blank":
+    default:
+      return "bg-section-blank";
+  }
+}
+
+function sectionLabel(kind: SlideKind): string {
+  switch (kind) {
+    case "title":
+      return "Title";
+    case "lyrics":
+      return "Lyrics";
+    case "scripture":
+      return "Scripture";
+    case "sermon":
+      return "Sermon";
+    case "blank":
+      return "Blank";
+    default:
+      return "Slide";
+  }
+}
 
 export function CenterPanel({
   activeItemId,
@@ -40,71 +79,100 @@ export function CenterPanel({
   );
 
   return (
-    <main className="flex min-w-0 flex-1 flex-col">
-      <div className="flex items-center gap-3 border-b border-hairline px-4 py-2.5">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{item.title}</p>
-          <p className="truncate text-[11px] text-muted-foreground">{item.subtitle}</p>
+    <main className="flex min-w-0 flex-1 flex-col bg-background">
+      {/* Header strip */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-hairline bg-panel px-3 py-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold text-foreground">{item.title}</p>
+          <p className="truncate text-[10.5px] text-muted-foreground">{item.subtitle}</p>
         </div>
-        <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-panel-raised px-3 py-1 text-[11px] text-muted-foreground ring-1 ring-hairline">
-          <Clock className="size-3" /> Schedule · {items.length} items
-        </span>
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <span className="rounded bg-panel-raised px-1.5 py-0.5 text-[10px] tabular-nums">
+            {thumbnailSlides.length} slides
+          </span>
+          <div className="mx-1 h-4 w-px bg-hairline" />
+          <button
+            className="rounded p-1 hover:bg-panel-raised hover:text-foreground"
+            title="Grid view"
+          >
+            <Grid2x2 className="size-3.5" />
+          </button>
+          <button
+            className="rounded p-1 hover:bg-panel-raised hover:text-foreground"
+            title="List view"
+          >
+            <List className="size-3.5" />
+          </button>
+          <div className="mx-1 h-4 w-px bg-hairline" />
+          <button
+            className="rounded p-1 hover:bg-panel-raised hover:text-foreground"
+            title="Zoom out"
+          >
+            <ZoomOut className="size-3.5" />
+          </button>
+          <button
+            className="rounded p-1 hover:bg-panel-raised hover:text-foreground"
+            title="Zoom in"
+          >
+            <ZoomIn className="size-3.5" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 scroll-slim">
-        <div className="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-xl ring-1 ring-white/10 [box-shadow:var(--shadow-stage)]">
-          <SlideView slide={current} scale="canvas" />
-        </div>
-
-        <div>
-          <p className="eyebrow mb-2">Slides in this item</p>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5">
-            {thumbnailSlides.map((slide, i) => {
-              const isActive = slide.id === currentSlideId;
-              return (
-                <button
-                  key={slide.id}
-                  onClick={() => onSelectSlide(slide.id)}
-                  className={`group overflow-hidden rounded-lg text-left ring-1 transition-all ${
-                    isActive ? "ring-2 ring-beam" : "ring-hairline hover:ring-muted-foreground/60"
-                  }`}
+      {/* Slide grid */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-2.5 scroll-slim">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2">
+          {thumbnailSlides.map((slide, i) => {
+            const isActive = slide.id === currentSlideId;
+            return (
+              <button
+                key={slide.id}
+                onClick={() => onSelectSlide(slide.id)}
+                className={`group overflow-hidden rounded-md text-left ring-1 transition-all ${
+                  isActive ? "ring-2 ring-beam" : "ring-hairline hover:ring-muted-foreground/60"
+                }`}
+              >
+                {/* Thumbnail */}
+                <div className="relative aspect-video w-full overflow-hidden">
+                  <SlideView slide={slide} scale="thumb" />
+                  {/* Number badge */}
+                  <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-semibold tabular-nums text-white/90">
+                    {i + 1}
+                  </span>
+                </div>
+                {/* Section bar */}
+                <div
+                  className={`flex items-center justify-between px-1.5 py-0.5 ${sectionBarClass(slide.kind)}`}
                 >
-                  <div className="aspect-video w-full">
-                    <SlideView slide={slide} scale="thumb" />
-                  </div>
-                  <div className="flex items-center justify-between bg-panel-raised/70 px-2 py-1">
-                    <span className="truncate text-[11px]">{slide.label}</span>
-                    <span className="text-[10px] text-muted-foreground">{i + 1}</span>
-                  </div>
-                </button>
-              );
-            })}
-            <button className="grid aspect-video place-items-center rounded-lg border border-dashed border-hairline text-muted-foreground transition-colors hover:border-beam/50 hover:text-beam">
-              <Plus className="size-5" />
-            </button>
-          </div>
+                  <span className="text-[8.5px] font-bold uppercase tracking-wide text-white/90">
+                    {sectionLabel(slide.kind)}
+                  </span>
+                  <span className="text-[8.5px] tabular-nums text-white/70">{slide.label}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-hairline bg-panel/60 px-4 py-3">
-        <p className="eyebrow mb-2 flex items-center gap-1.5">
-          <Film className="size-3" /> Media & backgrounds
-        </p>
-        <div className="flex gap-2.5 overflow-x-auto pb-1 scroll-slim">
+      {/* Media strip at bottom */}
+      <div className="shrink-0 border-t border-hairline bg-panel px-3 py-2">
+        <p className="eyebrow mb-1.5">Media & Backgrounds</p>
+        <div className="flex gap-2 overflow-x-auto pb-1 scroll-slim">
           {mediaItems.map((m) => (
             <button
               key={m.id}
               onClick={() => onSelectMedia(m.id)}
-              className={`group w-28 shrink-0 overflow-hidden rounded-lg text-left ring-1 transition-all ${
+              className={`group w-24 shrink-0 overflow-hidden rounded text-left ring-1 transition-all ${
                 activeMediaId === m.id
                   ? "ring-2 ring-beam"
                   : "ring-hairline hover:ring-muted-foreground/60"
               }`}
             >
               <div className={`aspect-video w-full bg-gradient-to-br ${m.tone}`} />
-              <div className="bg-panel-raised/70 px-2 py-1">
-                <p className="truncate text-[11px]">{m.name}</p>
-                <p className="text-[10px] text-muted-foreground">{m.type}</p>
+              <div className="bg-panel-raised px-1.5 py-0.5">
+                <p className="truncate text-[10px]">{m.name}</p>
+                <p className="text-[9px] text-muted-foreground">{m.type}</p>
               </div>
             </button>
           ))}

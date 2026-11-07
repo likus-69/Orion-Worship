@@ -39,6 +39,7 @@ function Index() {
   const [tab, setTab] = useState<TabId | null>(null);
   const [live, setLive] = useState(true);
   const [presenting, setPresenting] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   // Derive the flat slide list from state so the operator's added songs are
   // immediately navigable in the center + output panels.
@@ -123,6 +124,7 @@ function Index() {
         onSelect={(t) => setTab((prev) => (prev === t ? null : t))}
         onPresent={() => setPresenting(true)}
         onResetPlan={handleResetPlan}
+        onOpenLibrary={() => setLibraryOpen(true)}
         live={live}
       />
       {tab && <div>tab content</div>}
@@ -133,6 +135,8 @@ function Index() {
           onSelectItem={selectItem}
           serviceItems={items}
           onAddSong={handleAddSong}
+          libraryOpen={libraryOpen}
+          onLibraryOpenChange={setLibraryOpen}
         />
         <CenterPanel
           activeItemId={activeItemId}
@@ -152,6 +156,7 @@ function Index() {
           live={live}
           onToggleLive={() => setLive((v) => !v)}
           onNext={() => goTo(index + 1)}
+          onPrev={() => goTo(index - 1)}
           position={`Slide ${index + 1} of ${flatSlides.length}`}
         />
       </div>
